@@ -12,12 +12,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 import os
 import sys
 from twisted.web import server
+from twisted.web.resource import Resource
 from twisted.web.xmlrpc import XMLRPC, NoSuchFunction
 from twisted.internet import reactor, defer
 from robotremoteserver import RobotRemoteInterface
+
+
+logger = logging.getLogger(__name__)
 
 
 class TwistedRemoteServer(XMLRPC):
@@ -28,7 +33,7 @@ class TwistedRemoteServer(XMLRPC):
     interface and the other interface from the one process.
     """
 
-    def __init__(self, library, host='127.0.0.1', port=8270, port_file=None,
+    def __init__(self, library, host="0.0.0.0", port=8274, port_file=None,
                  allow_stop=True):
         """Configure remote Twisted-based server.
 
@@ -36,10 +41,11 @@ class TwistedRemoteServer(XMLRPC):
         :param: host:
         """
 
+        XMLRPC.__init__(self, allowNone=True)
         self.server_address = (host, port)
         self._funcs = {}
         self._robot = RobotRemoteInterface(library, self)
-        reactor.listenTCP(int(port), server.Site(self._robot), interface=host)
+        self._allow_stop = allow_stop
         return
 
     def register_function(self, func, name=None):
@@ -62,12 +68,12 @@ class TwistedRemoteServer(XMLRPC):
 
         prefix = 'Robot Framework remote server at %s:%s ' % self.server_address
         if self._allow_stop:
-            self._log(prefix + 'stopping.')
+            logger.info(prefix + 'stopping.')
             reactor.callLater(1, reactor.stop)
 
         else:
-            self._log(prefix + 'does not allow stopping.', 'WARN')
-        return self._shutdown
+            logger.warn(prefix + 'does not allow stopping.')
+        return
 
     def lookupProcedure(self, path):
         """Lookup callable for XML-RPC request.
