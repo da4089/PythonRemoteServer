@@ -92,6 +92,14 @@ class TwistedRemoteServer(XMLRPC):
 
         return self._funcs.keys()
 
+    def _getFunction(self, path):
+        """Compatibility with Twisted < 11.1 (eg. RHEL6)."""
+        return self.lookupProcedure(path)
+
+    def _listFunctions(self):
+        """Compatibility with Twisted < 11.1 (eg. RHEL6)."""
+        return self.listProcedures()
+
     def serve_forever(self):
         """Start remote server responding to client connections."""
         print 'Robot Framework remote server starting at %s:%s' % \
